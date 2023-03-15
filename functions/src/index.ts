@@ -1,8 +1,8 @@
 import * as functions from "firebase-functions";
-import { adminDb, admin } from "./firebaseAdmin";
+import { adminDb } from "./firebaseAdmin";
 
 const fetchResults: any = async (id: string) => {
-  const apiKey = process.env.BRIGHT_DATA_API_KEY;
+  const apiKey = process.env.NEXT_PUBLIC_BRIGHT_DATA_API_KEY;
 
   const res = await fetch(`https://api.brightdata.com/dca/dataset?id=${id}`, {
     method: "GET",
@@ -25,13 +25,13 @@ export const onScraperComplete = functions.https.onRequest(
   async (request, response) => {
     console.log("SCRAPER COMPLETE >>> : ", request.body);
 
-    const { success, id } = request.body;
+    const { success, id, finished } = request.body;
 
     if (!success) {
       await adminDb.collection("searches").doc(id).set(
         {
           status: "error",
-          updatedAt: admin.firestore.Timestamp.now(),
+          updatedAt: finished,
         },
         { merge: true }
       );
@@ -42,7 +42,7 @@ export const onScraperComplete = functions.https.onRequest(
     await adminDb.collection("searches").doc(id).set(
       {
         status: "complete",
-        updatedAt: admin.firestore.Timestamp.now(),
+        updatedAt: finished,
         results: data,
       },
       { merge: true }
